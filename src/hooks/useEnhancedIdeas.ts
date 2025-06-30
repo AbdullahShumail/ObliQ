@@ -81,26 +81,31 @@ export const useEnhancedIdeas = () => {
 
   const addIdea = useCallback(async (rawInput: string) => {
     try {
-      const { idea: ideaData, existingProducts, suggestions } = await EnhancedAIService.processNewIdea(rawInput);
+      const result = await EnhancedAIService.processNewIdea(rawInput);
       
-      const newIdea: Idea = {
-        ...ideaData,
-        id: crypto.randomUUID(),
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        lastViewedAt: new Date(),
-        aiSuggestions: suggestions
-      };
-      
-      const updatedIdeas = [...ideas, newIdea];
-      saveIdeas(updatedIdeas);
-      
-      // Update clusters
-      const newClusters = await ClusteringService.findClusters(updatedIdeas);
-      saveClusters(newClusters);
+      if (result.structuredIdea) {
+        const newIdea: Idea = {
+          ...result.structuredIdea,
+          id: crypto.randomUUID(),
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          lastViewedAt: new Date(),
+          aiSuggestions: result.suggestions
+        };
+        
+        const updatedIdeas = [...ideas, newIdea];
+        saveIdeas(updatedIdeas);
+        
+        // Update clusters
+        const newClusters = await ClusteringService.findClusters(updatedIdeas);
+        saveClusters(newClusters);
+        
+        setLoadingState(prev => ({ ...prev, isLoading: false }));
+        return newIdea;
+      }
       
       setLoadingState(prev => ({ ...prev, isLoading: false }));
-      return newIdea;
+      return null;
     } catch (error) {
       console.error('Error adding idea:', error);
       setLoadingState(prev => ({ ...prev, isLoading: false }));

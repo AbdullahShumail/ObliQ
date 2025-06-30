@@ -3,7 +3,6 @@ import Fuse from 'fuse.js';
 
 export class MemoryService {
   private static readonly SESSION_KEY = 'ai-idea-board-session';
-  private static readonly MEMORY_KEY = 'ai-idea-board-memory';
   
   static getSession(): UserSession {
     const saved = localStorage.getItem(this.SESSION_KEY);

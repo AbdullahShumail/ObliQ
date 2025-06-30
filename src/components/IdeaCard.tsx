@@ -21,7 +21,6 @@ interface IdeaCardProps {
   onAIExpand: (idea: Idea) => void;
   onRemix: (idea: Idea) => void;
   onToggleStar?: (id: string) => void;
-  isInCluster?: boolean;
 }
 
 export const IdeaCard: React.FC<IdeaCardProps> = ({
@@ -31,7 +30,6 @@ export const IdeaCard: React.FC<IdeaCardProps> = ({
   onAIExpand,
   onRemix,
   onToggleStar,
-  isInCluster = false,
 }) => {
   const [showMenu, setShowMenu] = useState(false);
 

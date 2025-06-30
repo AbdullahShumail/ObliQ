@@ -1,5 +1,4 @@
 import { Notification, Idea } from '../types';
-import { formatDistanceToNow } from 'date-fns';
 
 export class NotificationService {
   private static readonly NOTIFICATIONS_KEY = 'ai-idea-board-notifications';

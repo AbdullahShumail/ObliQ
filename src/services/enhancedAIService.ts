@@ -1,4 +1,4 @@
-import { Idea, AISuggestion, RemixVariant, MaturityAnalysis, LoadingState, IdeaCategory } from '../types';
+import { Idea, AISuggestion, RemixVariant, MaturityAnalysis, LoadingState } from '../types';
 import { WebSearchService } from './webSearchService';
 import { OpenRouterService } from './openrouterService';
 

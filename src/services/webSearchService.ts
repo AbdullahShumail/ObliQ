@@ -1,8 +1,6 @@
 import { ExistingProduct } from '../types';
 
 export class WebSearchService {
-  private static readonly SEARCH_API_KEY = 'demo-key'; // In production, use environment variable
-  
   static async searchExistingProducts(ideaTitle: string, ideaDescription: string): Promise<ExistingProduct[]> {
     // Simulate API delay
     await new Promise(resolve => setTimeout(resolve, 1500));

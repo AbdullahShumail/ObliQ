@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Brain, Lightbulb, TrendingUp, Target, Zap, ArrowRight, Sparkles, BarChart3, Users, Star, Award } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { Brain, Lightbulb, Target, Zap, ArrowRight, BarChart3 } from 'lucide-react';
 
 interface IntroSectionProps {
   onEngineSelect: (engine: 'analyzer' | 'expansion') => void;
