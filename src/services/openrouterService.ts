@@ -170,7 +170,7 @@ export class OpenRouterService {
               applied: false,
               createdAt: new Date()
             }))
-          : this.generateDefaultSuggestions(structuredIdea, false);
+          : this.generateDefaultSuggestions(false);
 
         console.log('🎯 Final structured idea:', structuredIdea);
         console.log('💡 Generated suggestions:', suggestions);
@@ -693,7 +693,7 @@ export class OpenRouterService {
     return Math.min(score, 100);
   }
 
-  private static generateDefaultSuggestions(idea: any, isExpansion: boolean = false): AISuggestion[] {
+  private static generateDefaultSuggestions(isExpansion: boolean = false): AISuggestion[] {
     if (isExpansion) {
       return [
         {
@@ -970,7 +970,7 @@ export class OpenRouterService {
       feasibilityAnalysis: this.generateFallbackFeasibilityAnalysis()
     };
 
-    const suggestions = this.generateDefaultSuggestions(structuredIdea, false);
+    const suggestions = this.generateDefaultSuggestions(false);
     
     console.log('✅ Fallback processing complete:', { structuredIdea, suggestions });
     
