@@ -208,7 +208,7 @@
   /* Enhanced button styles with blue and pink gradients */
   .btn-primary {
     background: linear-gradient(135deg, var(--neon-blue), var(--neon-blue-dark));
-    color: white;
+    color: white !important;
     border-radius: 12px;
     padding: 14px 28px;
     font-weight: 600;
@@ -254,7 +254,7 @@
   
   .btn-secondary {
     background-color: var(--bg-secondary);
-    color: var(--text-primary);
+    color: var(--text-primary) !important;
     border: 2px solid var(--border-primary);
     border-radius: 12px;
     padding: 14px 28px;
@@ -283,14 +283,26 @@
   }
   
   /* Theme-aware backgrounds */
-  .bg-primary { background-color: var(--bg-primary); }
-  .bg-secondary { background-color: var(--bg-secondary); }
-  .bg-tertiary { background-color: var(--bg-tertiary); }
+  .bg-primary { 
+    background-color: var(--bg-primary) !important; 
+  }
+  .bg-secondary { 
+    background-color: var(--bg-secondary) !important; 
+  }
+  .bg-tertiary { 
+    background-color: var(--bg-tertiary) !important; 
+  }
   
-  /* Theme-aware text */
-  .text-primary { color: var(--text-primary); }
-  .text-secondary { color: var(--text-secondary); }
-  .text-muted { color: var(--text-muted); }
+  /* FIXED Theme-aware text colors */
+  .text-primary { 
+    color: var(--text-primary) !important; 
+  }
+  .text-secondary { 
+    color: var(--text-secondary) !important; 
+  }
+  .text-muted { 
+    color: var(--text-muted) !important; 
+  }
   
   /* Theme-aware borders */
   .border-primary { border-color: var(--border-primary); }
