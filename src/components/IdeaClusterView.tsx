@@ -47,7 +47,6 @@ export const IdeaClusterView: React.FC<IdeaClusterViewProps> = ({
             onDelete={onDeleteIdea}
             onAIExpand={onAIExpand}
             onRemix={onRemix}
-            isInCluster={true}
           />
         ))}
       </div>

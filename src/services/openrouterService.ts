@@ -1,3 +1,4 @@
+/// <reference types="vite/client" />
 import { Idea, AISuggestion, RemixVariant, MaturityAnalysis, IdeaCategory, MarketPotential, FeasibilityScore, ActionableRecommendations, RecommendationItem, Milestone } from '../types';
 
 interface ExpandedIdea {
