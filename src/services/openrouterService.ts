@@ -15,13 +15,23 @@ export class OpenRouterService {
   private static readonly API_KEY = import.meta.env.VITE_OPENROUTER_API_KEY;
   private static readonly API_URL = 'https://openrouter.ai/api/v1/chat/completions';
   private static readonly MODEL = import.meta.env.VITE_OPENROUTER_MODEL || 'deepseek/deepseek-r1-0528-qwen3-8b:free';
-  private static readonly SITE_URL = import.meta.env.VITE_SITE_URL || 'https://localhost:5173';
+  private static readonly SITE_URL = import.meta.env.VITE_SITE_URL || 'https://splendorous-marzipan-f11cb4.netlify.app';
   private static readonly SITE_NAME = import.meta.env.VITE_SITE_NAME || 'AI Idea Board';
 
   private static async makeAPICall(messages: Array<{role: string, content: string}>): Promise<string> {
     try {
       console.log('🤖 Making API call to OpenRouter...');
+      console.log('🔑 API Key present:', !!this.API_KEY);
+      console.log('🔑 API Key starts with:', this.API_KEY?.substring(0, 10) + '...');
       console.log('📝 Messages:', messages);
+      
+      if (!this.API_KEY) {
+        throw new Error('OpenRouter API key is not configured. Please check your .env file.');
+      }
+
+      if (!this.API_KEY.startsWith('sk-or-v1-')) {
+        throw new Error('Invalid OpenRouter API key format. It should start with "sk-or-v1-"');
+      }
       
       const response = await fetch(this.API_URL, {
         method: "POST",
@@ -40,7 +50,20 @@ export class OpenRouterService {
       });
 
       if (!response.ok) {
-        throw new Error(`API request failed: ${response.status}`);
+        const errorText = await response.text();
+        console.error('❌ API Response Error:', {
+          status: response.status,
+          statusText: response.statusText,
+          body: errorText
+        });
+        
+        if (response.status === 401) {
+          throw new Error(`Authentication failed (401). Please check your OpenRouter API key. Make sure it's valid and has sufficient credits.`);
+        } else if (response.status === 429) {
+          throw new Error(`Rate limit exceeded (429). Please wait a moment before trying again.`);
+        } else {
+          throw new Error(`API request failed (${response.status}): ${response.statusText}`);
+        }
       }
 
       const data = await response.json();
