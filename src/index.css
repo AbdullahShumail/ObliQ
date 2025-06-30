@@ -188,19 +188,21 @@
     }
   }
   
-  /* Glassmorphism effects */
+  /* IMPROVED Glassmorphism effects - Better visibility in both themes */
   .glass {
-    background: rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    /* Light mode: Darker background for better contrast */
+    background: rgba(0, 0, 0, 0.08);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(0, 0, 0, 0.12);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
   }
   
   [data-theme="dark"] .glass {
-    background: rgba(0, 0, 0, 0.2);
-    backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    /* Dark mode: Light background for contrast */
+    background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
   }
   
   /* Enhanced button styles with blue and pink gradients */
