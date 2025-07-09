@@ -18,72 +18,130 @@ export class OpenRouterService {
   private static readonly SITE_URL = import.meta.env.VITE_SITE_URL || 'https://splendorous-marzipan-f11cb4.netlify.app';
   private static readonly SITE_NAME = import.meta.env.VITE_SITE_NAME || 'AI Idea Board';
 
-  // Pre-validation to catch obviously bad ideas
+  // ULTRA-STRICT validation to catch nonsensical business ideas
   private static validateIdeaQuality(input: string): {
     isValid: boolean;
     issues: string[];
     qualityScore: number;
+    isNonsensical: boolean;
   } {
     const issues: string[] = [];
-    let qualityScore = 50; // Start neutral
+    let qualityScore = 30; // Start lower
+    let isNonsensical = false;
     
     const text = input.toLowerCase().trim();
     
-    // Check for gibberish or very short input
-    if (text.length < 10) {
+    // CRITICAL: Check for obviously nonsensical business models
+    const nonsensicalPatterns = [
+      // Financial nonsense
+      /buy.*high.*sell.*low/,
+      /purchase.*expensive.*sell.*cheap/,
+      /lose.*money.*intentionally/,
+      /guaranteed.*loss/,
+      /negative.*profit/,
+      
+      // Logical contradictions
+      /free.*expensive/,
+      /always.*never/,
+      /impossible.*easy/,
+      /infinite.*limited/,
+      
+      // Clearly bad business models
+      /give.*away.*everything/,
+      /work.*for.*free/,
+      /no.*revenue/,
+      /burn.*money/,
+      
+      // Gibberish patterns
+      /(.)\1{5,}/, // Repeated characters
+      /qwerty|asdf|zxcv|123456789|abcdefgh/,
+      /random.*text|test.*test|example.*example/
+    ];
+    
+    // Check for nonsensical patterns
+    if (nonsensicalPatterns.some(pattern => pattern.test(text))) {
+      isNonsensical = true;
+      issues.push('This appears to be a fundamentally flawed or nonsensical business concept');
+      qualityScore = 5; // Maximum 5% for nonsensical ideas
+    }
+    
+    // Check for basic quality issues
+    if (text.length < 15) {
       issues.push('Idea is too short and lacks detail');
-      qualityScore -= 30;
+      qualityScore -= 20;
     }
     
-    // Check for repeated characters or obvious gibberish
+    // Check for gibberish
+    const words = text.split(/\s+/);
+    const avgWordLength = text.replace(/\s/g, '').length / words.length;
     const hasRepeatedChars = /(.)\1{4,}/.test(text);
-    const hasRandomKeyboard = /qwerty|asdf|zxcv|123456|abcdef/.test(text);
-    const wordCount = text.split(/\s+/).length;
-    const avgWordLength = text.replace(/\s/g, '').length / wordCount;
     
-    if (hasRepeatedChars || hasRandomKeyboard || avgWordLength < 2) {
+    if (hasRepeatedChars || avgWordLength < 2.5) {
       issues.push('Input appears to be gibberish or random text');
-      qualityScore -= 40;
+      qualityScore -= 30;
+      isNonsensical = true;
     }
     
-    // Check for actual problem/solution indication
+    // Check for coherent business logic
+    const businessWords = ['profit', 'revenue', 'customer', 'market', 'sell', 'buy', 'service', 'product'];
+    const hasBusinessContext = businessWords.some(word => text.includes(word));
+    
+    if (hasBusinessContext) {
+      // If it mentions business concepts, check for logical consistency
+      if (text.includes('buy') && text.includes('sell')) {
+        // Check for buy high/sell low pattern (financial suicide)
+        const buyHighSellLow = /buy.*(?:high|expensive|premium).*sell.*(?:low|cheap|discount)/ ||
+                              /purchase.*(?:high|expensive).*sell.*(?:low|cheap)/ ||
+                              /expensive.*buy.*cheap.*sell/;
+        
+        if (buyHighSellLow.test(text)) {
+          isNonsensical = true;
+          issues.push('This business model would guarantee financial losses');
+          qualityScore = 3;
+        }
+      }
+    }
+    
+    // Check for problem/solution coherence
     const problemIndicators = ['problem', 'issue', 'difficult', 'hard', 'frustrating', 'need', 'want', 'solve', 'help', 'improve'];
-    const solutionIndicators = ['app', 'platform', 'service', 'tool', 'system', 'website', 'solution', 'idea', 'concept'];
+    const solutionIndicators = ['app', 'platform', 'service', 'tool', 'system', 'website', 'solution'];
     
     const hasProblem = problemIndicators.some(indicator => text.includes(indicator));
     const hasSolution = solutionIndicators.some(indicator => text.includes(indicator));
     
-    if (!hasProblem && !hasSolution) {
+    if (!hasProblem && !hasSolution && !isNonsensical) {
       issues.push('No clear problem or solution identified');
+      qualityScore -= 15;
+    }
+    
+    // Check for sentence structure
+    const sentences = text.split(/[.!?]+/).filter(s => s.trim().length > 0);
+    if (sentences.length < 1 || sentences.every(s => s.split(' ').length < 4)) {
+      issues.push('Lacks coherent explanation');
       qualityScore -= 20;
     }
     
-    // Check for coherent sentences
-    const sentences = text.split(/[.!?]+/).filter(s => s.trim().length > 0);
-    if (sentences.length < 1 || sentences.every(s => s.split(' ').length < 3)) {
-      issues.push('Lacks coherent explanation');
-      qualityScore -= 25;
+    // Positive indicators (only if not nonsensical)
+    if (!isNonsensical) {
+      if (text.includes('user') || text.includes('customer')) qualityScore += 8;
+      if (text.includes('market') && !text.includes('buy high sell low')) qualityScore += 8;
+      if (words.length >= 15) qualityScore += 10;
+      if (sentences.length >= 2) qualityScore += 8;
     }
     
-    // Positive indicators
-    if (text.includes('user') || text.includes('customer')) qualityScore += 10;
-    if (text.includes('market') || text.includes('business')) qualityScore += 10;
-    if (wordCount >= 20) qualityScore += 15;
-    if (sentences.length >= 3) qualityScore += 10;
-    
-    qualityScore = Math.max(0, Math.min(100, qualityScore));
+    // Final score bounds
+    qualityScore = Math.max(isNonsensical ? 3 : 5, Math.min(isNonsensical ? 8 : 100, qualityScore));
     
     return {
-      isValid: qualityScore >= 30 && issues.length < 3,
+      isValid: qualityScore >= 25 && !isNonsensical,
       issues,
-      qualityScore
+      qualityScore,
+      isNonsensical
     };
   }
 
   private static async makeAPICall(messages: Array<{role: string, content: string}>): Promise<string> {
     try {
-      console.log('🤖 Making API call to OpenRouter...');
-      
       if (!this.API_KEY) {
         throw new Error('OpenRouter API key is not configured. Please check your .env file.');
       }
@@ -103,7 +161,7 @@ export class OpenRouterService {
         body: JSON.stringify({
           "model": this.MODEL,
           "messages": messages,
-          "temperature": 0.3, // Lower temperature for more consistent, realistic responses
+          "temperature": 0.2, // Even lower temperature for more consistent critical responses
           "max_tokens": 3000
         })
       });
@@ -128,8 +186,6 @@ export class OpenRouterService {
       const data = await response.json();
       const aiResponse = data.choices[0]?.message?.content || '';
       
-      console.log('✅ AI Response received');
-      
       return aiResponse;
     } catch (error) {
       console.error('❌ OpenRouter API error:', error);
@@ -146,9 +202,9 @@ export class OpenRouterService {
     try {
       console.log('🚀 Processing idea with AI:', rawInput);
       
-      // Pre-validate the idea quality
+      // ULTRA-STRICT validation
       const validation = this.validateIdeaQuality(rawInput);
-      console.log('🔍 Idea validation result:', validation);
+      console.log('🔍 Strict validation result:', validation);
       
       // Check if this is an expansion request
       const isExpansionRequest = rawInput.toLowerCase().includes('expand this rough idea');
@@ -157,54 +213,71 @@ export class OpenRouterService {
         const roughIdea = rawInput.replace(/please expand this rough idea into a comprehensive concept:\s*/i, '').trim();
         const roughValidation = this.validateIdeaQuality(roughIdea);
         
-        if (!roughValidation.isValid) {
-          console.warn('⚠️ Rough idea failed validation, using fallback');
-          return this.fallbackProcessing(rawInput, true);
+        if (roughValidation.isNonsensical || !roughValidation.isValid) {
+          console.warn('⚠️ Rough idea failed strict validation, using critical fallback');
+          return this.fallbackProcessing(rawInput, true, roughValidation);
         }
         
         const expandedIdeas = await this.generateExpandedIdeas(roughIdea);
         return { expandedIdeas, isExpansion: true };
       } else {
+        // For nonsensical ideas, skip AI and go straight to critical fallback
+        if (validation.isNonsensical) {
+          console.warn('🚫 Nonsensical idea detected, using critical fallback');
+          return this.fallbackProcessing(rawInput, false, validation);
+        }
+        
         if (!validation.isValid) {
           console.warn('⚠️ Idea failed validation, using critical fallback');
           return this.fallbackProcessing(rawInput, false, validation);
         }
         
         const prompt = `
-          You are a CRITICAL and REALISTIC business analyst. Analyze this idea with HONEST assessment: "${rawInput}"
+          You are an EXTREMELY CRITICAL and BRUTALLY HONEST business analyst. Analyze this idea with ZERO tolerance for bad concepts: "${rawInput}"
           
-          IMPORTANT: Be realistic and critical. Not every idea is good. Consider:
-          - Is this actually solving a real problem?
-          - Is there genuine market demand?
-          - What are the real challenges and barriers?
-          - Be honest about feasibility and competition
+          CRITICAL INSTRUCTIONS:
+          - If this is a fundamentally flawed business model (like buying high and selling low), give it a score of 5-15
+          - If it's nonsensical or gibberish, score it 5-10
+          - If it's a mediocre idea with issues, score it 20-45
+          - Only good, viable ideas should score 50+
+          - NEVER give inflated scores to bad ideas
+          - Be brutally honest about flaws and impossibilities
+          
+          Consider these CRITICAL factors:
+          - Does this make basic business sense?
+          - Would this actually generate profit?
+          - Is there real market demand?
+          - What are the fatal flaws?
+          - Is this even logically possible?
           
           Respond with JSON:
           {
-            "title": "Professional title (max 60 chars)",
-            "description": "Enhanced but realistic description",
+            "title": "Honest title reflecting quality",
+            "description": "Brutally honest description",
             "category": "tech/business/social/education/health/entertainment/other",
-            "tags": ["3-5", "relevant", "tags"],
-            "painPoints": ["2-4", "real", "problems", "this", "solves"],
-            "features": ["3-5", "realistic", "features"],
-            "userPersonas": ["2-3", "specific", "user", "types"],
+            "tags": ["honest", "tags"],
+            "painPoints": ["real", "problems", "if", "any"],
+            "features": ["realistic", "features", "if", "viable"],
+            "userPersonas": ["actual", "users", "if", "they", "exist"],
             "realityCheck": {
-              "viabilityScore": 45,
-              "marketDemand": "low/medium/high",
-              "competitionLevel": "low/medium/high/saturated",
-              "implementationDifficulty": "low/medium/high/extreme",
-              "criticalIssues": ["honest", "problems", "with", "this", "idea"],
-              "marketReality": "honest assessment of market conditions"
+              "viabilityScore": 15,
+              "businessLogic": "fundamentally flawed/questionable/viable",
+              "marketDemand": "nonexistent/low/medium/high",
+              "profitability": "impossible/unlikely/possible/likely",
+              "competitionLevel": "irrelevant/low/medium/high/saturated",
+              "implementationDifficulty": "impossible/extreme/high/medium/low",
+              "fatalFlaws": ["critical", "problems", "that", "kill", "this", "idea"],
+              "marketReality": "brutal honest assessment"
             },
             "suggestions": [
               {
                 "type": "critical",
-                "content": "honest feedback about what needs work"
+                "content": "honest feedback about fundamental problems"
               }
             ]
           }
           
-          BE HONEST. If it's a bad idea, reflect that in low scores and critical feedback.
+          BE RUTHLESSLY HONEST. Bad ideas deserve bad scores. Don't sugarcoat failures.
         `;
 
         const response = await this.makeAPICall([
@@ -217,13 +290,12 @@ export class OpenRouterService {
           const jsonString = jsonMatch ? jsonMatch[0] : response;
           parsedResponse = JSON.parse(jsonString);
         } catch (parseError) {
-          console.warn('⚠️ Failed to parse AI response, using fallback');
+          console.warn('⚠️ Failed to parse AI response, using critical fallback');
           return this.fallbackProcessing(rawInput, false, validation);
         }
 
-        // Apply realistic scoring based on validation and AI assessment
-        const baseScore = Math.min(validation.qualityScore, parsedResponse.realityCheck?.viabilityScore || 50);
-        const adjustedScore = this.calculateRealisticMaturityScore(parsedResponse, validation, baseScore);
+        // ULTRA-STRICT scoring with multiple validation layers
+        const finalScore = this.calculateUltraStrictScore(parsedResponse, validation, rawInput);
 
         const structuredIdea: Omit<Idea, 'id' | 'createdAt' | 'updatedAt'> = {
           title: parsedResponse.title || this.extractTitle(rawInput),
@@ -233,7 +305,7 @@ export class OpenRouterService {
           painPoints: Array.isArray(parsedResponse.painPoints) ? parsedResponse.painPoints.slice(0, 4) : this.extractPainPoints(rawInput),
           features: Array.isArray(parsedResponse.features) ? parsedResponse.features.slice(0, 5) : this.extractFeatures(rawInput),
           userPersonas: Array.isArray(parsedResponse.userPersonas) ? parsedResponse.userPersonas.slice(0, 3) : this.extractUserPersonas(rawInput),
-          maturityScore: adjustedScore,
+          maturityScore: finalScore,
           existingProducts: [],
           developmentStage: 'raw',
           isStarred: false,
@@ -241,10 +313,10 @@ export class OpenRouterService {
           feasibilityAnalysis: this.processFeasibilityAnalysisFromResponse(parsedResponse.feasibilityAnalysis)
         };
 
-        // Generate critical suggestions based on reality check
-        const suggestions: AISuggestion[] = this.generateCriticalSuggestions(parsedResponse, validation);
+        // Generate ultra-critical suggestions
+        const suggestions: AISuggestion[] = this.generateUltraCriticalSuggestions(parsedResponse, validation, finalScore);
 
-        console.log('🎯 Final structured idea with realistic scoring:', structuredIdea);
+        console.log('🎯 Final structured idea with ultra-strict scoring:', structuredIdea);
 
         return { structuredIdea, suggestions, isExpansion: false };
       }
@@ -254,95 +326,219 @@ export class OpenRouterService {
     }
   }
 
-  private static calculateRealisticMaturityScore(aiResponse: any, validation: any, baseScore: number): number {
-    let score = Math.min(baseScore, 60); // Cap initial score at 60
+  private static calculateUltraStrictScore(aiResponse: any, validation: any, originalInput: string): number {
+    const text = originalInput.toLowerCase();
     
-    // Penalize based on validation issues
-    if (validation.issues.length > 0) {
-      score -= validation.issues.length * 10;
+    // IMMEDIATE DISQUALIFIERS - These get 3-8% maximum
+    if (validation.isNonsensical) {
+      console.log('🚫 Nonsensical idea detected - maximum 8%');
+      return Math.min(8, validation.qualityScore);
     }
     
-    // Adjust based on AI reality check
+    // Check for specific business logic failures
+    if (text.includes('buy') && text.includes('sell')) {
+      const buyHighSellLow = /buy.*(?:high|expensive|premium).*sell.*(?:low|cheap|discount)/ ||
+                            /purchase.*(?:high|expensive).*sell.*(?:low|cheap)/ ||
+                            /expensive.*buy.*cheap.*sell/;
+      
+      if (buyHighSellLow.test(text)) {
+        console.log('💸 Buy high/sell low detected - guaranteed loss model - 5%');
+        return 5;
+      }
+    }
+    
+    // Other immediate disqualifiers
+    const fatalPatterns = [
+      /lose.*money.*intentionally/,
+      /guaranteed.*loss/,
+      /negative.*profit/,
+      /give.*away.*everything/,
+      /work.*for.*free.*always/,
+      /no.*revenue.*ever/
+    ];
+    
+    if (fatalPatterns.some(pattern => pattern.test(text))) {
+      console.log('💀 Fatal business flaw detected - 3-7%');
+      return Math.floor(Math.random() * 5) + 3; // 3-7%
+    }
+    
+    // Start with validation score but cap it
+    let score = Math.min(validation.qualityScore, 45); // Hard cap at 45 initially
+    
+    // Apply AI reality check penalties
     const realityCheck = aiResponse.realityCheck;
     if (realityCheck) {
-      if (realityCheck.marketDemand === 'low') score -= 15;
-      if (realityCheck.competitionLevel === 'saturated') score -= 20;
-      if (realityCheck.implementationDifficulty === 'extreme') score -= 25;
-      if (realityCheck.criticalIssues?.length > 3) score -= 15;
+      // Business logic check
+      if (realityCheck.businessLogic === 'fundamentally flawed') {
+        score = Math.min(score, 15);
+        console.log('🔴 Fundamentally flawed business logic - capped at 15%');
+      } else if (realityCheck.businessLogic === 'questionable') {
+        score = Math.min(score, 35);
+      }
+      
+      // Profitability check
+      if (realityCheck.profitability === 'impossible') {
+        score = Math.min(score, 10);
+        console.log('💰 Impossible profitability - capped at 10%');
+      } else if (realityCheck.profitability === 'unlikely') {
+        score = Math.min(score, 25);
+      }
+      
+      // Market demand penalties
+      if (realityCheck.marketDemand === 'nonexistent') {
+        score -= 20;
+        console.log('📉 No market demand - penalty applied');
+      } else if (realityCheck.marketDemand === 'low') {
+        score -= 10;
+      }
+      
+      // Implementation difficulty
+      if (realityCheck.implementationDifficulty === 'impossible') {
+        score = Math.min(score, 8);
+        console.log('⚙️ Impossible to implement - capped at 8%');
+      } else if (realityCheck.implementationDifficulty === 'extreme') {
+        score -= 15;
+      }
+      
+      // Fatal flaws penalty
+      if (realityCheck.fatalFlaws && realityCheck.fatalFlaws.length > 2) {
+        score -= realityCheck.fatalFlaws.length * 5;
+        console.log(`🚨 ${realityCheck.fatalFlaws.length} fatal flaws detected - major penalty`);
+      }
     }
     
-    // Bonus for well-structured ideas
-    if (Array.isArray(aiResponse.painPoints) && aiResponse.painPoints.length >= 3) score += 10;
-    if (Array.isArray(aiResponse.features) && aiResponse.features.length >= 4) score += 10;
-    if (Array.isArray(aiResponse.userPersonas) && aiResponse.userPersonas.length >= 2) score += 5;
+    // Validation issue penalties
+    if (validation.issues.length > 0) {
+      score -= validation.issues.length * 8;
+    }
     
-    return Math.max(5, Math.min(85, score)); // Cap between 5-85, never give perfect scores
+    // Positive adjustments (only for non-terrible ideas)
+    if (score > 20) {
+      if (Array.isArray(aiResponse.painPoints) && aiResponse.painPoints.length >= 2) score += 5;
+      if (Array.isArray(aiResponse.features) && aiResponse.features.length >= 3) score += 5;
+      if (Array.isArray(aiResponse.userPersonas) && aiResponse.userPersonas.length >= 2) score += 3;
+    }
+    
+    // ABSOLUTE CAPS based on idea quality
+    if (validation.qualityScore < 20) {
+      score = Math.min(score, 15); // Very low quality ideas max 15%
+    } else if (validation.qualityScore < 40) {
+      score = Math.min(score, 35); // Low quality ideas max 35%
+    } else if (validation.qualityScore < 60) {
+      score = Math.min(score, 55); // Medium quality ideas max 55%
+    } else {
+      score = Math.min(score, 80); // Even good ideas max 80%
+    }
+    
+    const finalScore = Math.max(3, Math.min(80, score)); // Absolute bounds: 3-80%
+    
+    console.log(`📊 Ultra-strict scoring: ${finalScore}% (validation: ${validation.qualityScore}%, issues: ${validation.issues.length})`);
+    
+    return finalScore;
   }
 
-  private static generateCriticalSuggestions(aiResponse: any, validation: any): AISuggestion[] {
+  private static generateUltraCriticalSuggestions(aiResponse: any, validation: any, finalScore: number): AISuggestion[] {
     const suggestions: AISuggestion[] = [];
     
-    // Add validation-based suggestions
+    // For terrible ideas (< 20%), be brutally honest
+    if (finalScore < 20) {
+      suggestions.push({
+        id: crypto.randomUUID(),
+        type: 'critical',
+        content: '🚫 This concept has fundamental flaws that make it unviable. Consider completely rethinking the approach.',
+        applied: false,
+        createdAt: new Date()
+      });
+      
+      if (validation.isNonsensical) {
+        suggestions.push({
+          id: crypto.randomUUID(),
+          type: 'critical',
+          content: '❌ This appears to be nonsensical or contradictory. Please provide a coherent business concept.',
+          applied: false,
+          createdAt: new Date()
+        });
+      }
+    }
+    
+    // Add validation-based critical feedback
     validation.issues.forEach((issue: string) => {
       suggestions.push({
         id: crypto.randomUUID(),
         type: 'structure',
-        content: `⚠️ ${issue}. Consider providing more detail and clarity.`,
+        content: `⚠️ Critical issue: ${issue}`,
         applied: false,
         createdAt: new Date()
       });
     });
     
-    // Add AI reality check suggestions
+    // Add AI reality check feedback
     const realityCheck = aiResponse.realityCheck;
-    if (realityCheck?.criticalIssues) {
-      realityCheck.criticalIssues.forEach((issue: string) => {
+    if (realityCheck?.fatalFlaws) {
+      realityCheck.fatalFlaws.forEach((flaw: string) => {
         suggestions.push({
           id: crypto.randomUUID(),
-          type: 'maturity',
-          content: `🔍 Critical concern: ${issue}`,
+          type: 'critical',
+          content: `💀 Fatal flaw: ${flaw}`,
           applied: false,
           createdAt: new Date()
         });
       });
     }
     
-    // Add AI suggestions
-    if (Array.isArray(aiResponse.suggestions)) {
-      aiResponse.suggestions.forEach((s: any) => {
-        suggestions.push({
-          id: crypto.randomUUID(),
-          type: s.type || 'structure',
-          content: s.content || 'Consider improving this aspect of your idea.',
-          applied: false,
-          createdAt: new Date()
-        });
-      });
-    }
-    
-    // Default critical suggestions if none provided
-    if (suggestions.length === 0) {
+    // Business logic specific feedback
+    if (realityCheck?.businessLogic === 'fundamentally flawed') {
       suggestions.push({
         id: crypto.randomUUID(),
-        type: 'structure',
-        content: 'This idea needs significant development before it can be considered viable.',
+        type: 'critical',
+        content: '💸 This business model would result in guaranteed losses. Reconsider the fundamental approach.',
         applied: false,
         createdAt: new Date()
       });
     }
     
-    return suggestions.slice(0, 5); // Limit to 5 suggestions
+    // Add AI suggestions if they exist
+    if (Array.isArray(aiResponse.suggestions)) {
+      aiResponse.suggestions.forEach((s: any) => {
+        suggestions.push({
+          id: crypto.randomUUID(),
+          type: s.type || 'critical',
+          content: s.content || 'This idea needs significant improvement.',
+          applied: false,
+          createdAt: new Date()
+        });
+      });
+    }
+    
+    // Ensure we have at least one suggestion
+    if (suggestions.length === 0) {
+      suggestions.push({
+        id: crypto.randomUUID(),
+        type: 'structure',
+        content: 'This concept requires substantial development and validation before it can be considered viable.',
+        applied: false,
+        createdAt: new Date()
+      });
+    }
+    
+    return suggestions.slice(0, 6); // Limit to 6 critical suggestions
   }
 
   static async analyzeIdeaMaturity(idea: Idea): Promise<MaturityAnalysis> {
     try {
-      console.log('📈 Analyzing idea maturity for:', idea.title);
+      console.log('📈 Ultra-strict maturity analysis for:', idea.title);
       
       // Pre-validate the idea structure
       const structureScore = this.calculateStructureScore(idea);
+      const validation = this.validateIdeaQuality(idea.description);
+      
+      // For nonsensical ideas, skip AI and return critical analysis
+      if (validation.isNonsensical) {
+        return this.generateUltraCriticalMaturityAnalysis(idea, 5);
+      }
       
       const prompt = `
-        You are a CRITICAL business analyst. Provide HONEST maturity analysis for this idea:
+        You are a RUTHLESSLY CRITICAL business analyst. Provide BRUTALLY HONEST maturity analysis for this idea:
         
         Title: ${idea.title}
         Description: ${idea.description}
@@ -351,49 +547,53 @@ export class OpenRouterService {
         User Personas: ${idea.userPersonas.join(', ')}
         Category: ${idea.category}
         
-        BE REALISTIC AND CRITICAL. Consider:
-        - Real market conditions and competition
-        - Actual implementation challenges
-        - Genuine user demand validation
-        - Financial and resource requirements
+        CRITICAL INSTRUCTIONS:
+        - If this is fundamentally flawed (like buying high/selling low), score it 5-15
+        - If it's nonsensical, score it 5-10
+        - If it has major business logic problems, score it 15-30
+        - Only genuinely viable ideas should score 40+
+        - Be BRUTALLY honest about fatal flaws
+        - Don't inflate scores for bad ideas
+        
+        Consider:
+        - Does this make basic business sense?
+        - Are there fatal logical contradictions?
+        - Is profitability actually possible?
+        - What would kill this idea in the real world?
         
         Respond with JSON:
         {
-          "score": 35,
-          "strengths": ["honest", "strengths", "if", "any"],
-          "gaps": ["critical", "gaps", "and", "weaknesses"],
-          "nextSteps": ["realistic", "next", "steps"],
+          "score": 12,
+          "strengths": ["honest", "strengths", "if", "any", "exist"],
+          "gaps": ["brutal", "honest", "gaps", "and", "fatal", "flaws"],
+          "nextSteps": ["realistic", "steps", "or", "abandon", "advice"],
           "marketPotential": {
-            "score": 40,
-            "marketSize": "small/medium/large",
-            "competitionLevel": "low/medium/high/saturated",
-            "demandIndicators": ["realistic", "demand", "signals"],
-            "marketTrends": ["relevant", "trends"],
-            "targetMarketSize": "honest market size estimate",
-            "revenueProjection": "realistic revenue potential",
-            "barriers": ["real", "market", "barriers"],
-            "opportunities": ["genuine", "opportunities", "if", "any"]
+            "score": 10,
+            "marketSize": "nonexistent/small/medium/large",
+            "competitionLevel": "irrelevant/low/medium/high/saturated",
+            "demandIndicators": ["honest", "demand", "assessment"],
+            "marketTrends": ["relevant", "trends", "if", "any"],
+            "targetMarketSize": "brutal honest market size",
+            "revenueProjection": "honest revenue potential or lack thereof",
+            "barriers": ["real", "insurmountable", "barriers"],
+            "opportunities": ["genuine", "opportunities", "if", "any", "exist"]
           },
           "feasibilityScore": {
-            "overall": 45,
-            "technical": 50,
-            "financial": 40,
-            "operational": 45,
-            "legal": 70,
-            "timeToMarket": "realistic timeline",
-            "resourceRequirements": ["actual", "resources", "needed"],
-            "riskFactors": ["real", "risks"],
-            "successFactors": ["critical", "success", "requirements"]
+            "overall": 15,
+            "technical": 20,
+            "financial": 5,
+            "operational": 10,
+            "legal": 60,
+            "timeToMarket": "impossible/years/realistic timeline",
+            "resourceRequirements": ["massive", "unrealistic", "requirements"],
+            "riskFactors": ["guaranteed", "failure", "risks"],
+            "successFactors": ["impossible", "requirements", "for", "success"]
           },
-          "criticalAssessment": {
-            "viabilityRating": "poor/fair/good/excellent",
-            "majorConcerns": ["biggest", "problems", "with", "this", "idea"],
-            "competitiveThreats": ["real", "competitive", "threats"],
-            "marketReality": "honest market assessment"
-          }
+          "fatalFlaws": ["fundamental", "problems", "that", "kill", "this"],
+          "businessLogicCheck": "fundamentally flawed/questionable/viable"
         }
         
-        Don't inflate scores. Be honest about weaknesses and challenges.
+        BE RUTHLESS. Bad ideas deserve brutal honesty, not false hope.
       `;
 
       const response = await this.makeAPICall([
@@ -406,24 +606,21 @@ export class OpenRouterService {
         const jsonString = jsonMatch ? jsonMatch[0] : response;
         analysis = JSON.parse(jsonString);
       } catch (parseError) {
-        console.warn('⚠️ Failed to parse maturity analysis, using critical fallback');
-        return this.generateCriticalMaturityAnalysis(idea, structureScore);
+        console.warn('⚠️ Failed to parse maturity analysis, using ultra-critical fallback');
+        return this.generateUltraCriticalMaturityAnalysis(idea, structureScore);
       }
 
-      // Apply realistic scoring caps
-      const finalScore = Math.min(
-        Math.max(analysis.score || 30, 5), // Minimum 5, but realistic cap
-        structureScore + 30 // Structure score + max 30 bonus
-      );
+      // Apply ultra-strict scoring with multiple validation layers
+      const finalScore = this.calculateUltraStrictMaturityScore(analysis, validation, structureScore, idea);
 
       const result = {
         score: finalScore,
-        strengths: Array.isArray(analysis.strengths) ? analysis.strengths : ['Basic concept exists'],
-        gaps: Array.isArray(analysis.gaps) ? analysis.gaps : ['Significant development needed'],
-        nextSteps: Array.isArray(analysis.nextSteps) ? analysis.nextSteps : ['Validate core assumptions'],
-        marketPotential: this.processRealisticMarketPotential(analysis.marketPotential),
-        feasibilityScore: this.processRealisticFeasibilityScore(analysis.feasibilityScore),
-        recommendations: this.processRealisticRecommendations(analysis.recommendations, finalScore),
+        strengths: Array.isArray(analysis.strengths) ? analysis.strengths : (finalScore > 30 ? ['Basic concept exists'] : ['No significant strengths identified']),
+        gaps: Array.isArray(analysis.gaps) ? analysis.gaps : ['Fundamental viability issues'],
+        nextSteps: Array.isArray(analysis.nextSteps) ? analysis.nextSteps : (finalScore < 20 ? ['Consider abandoning this approach'] : ['Validate core assumptions']),
+        marketPotential: this.processUltraRealisticMarketPotential(analysis.marketPotential, finalScore),
+        feasibilityScore: this.processUltraRealisticFeasibilityScore(analysis.feasibilityScore, finalScore),
+        recommendations: this.processUltraRealisticRecommendations(analysis.recommendations, finalScore),
         missingElements: {
           painPoints: Math.max(0, 3 - (idea.painPoints?.length || 0)),
           features: Math.max(0, 4 - (idea.features?.length || 0)),
@@ -432,168 +629,211 @@ export class OpenRouterService {
         }
       };
 
-      console.log('✅ Critical maturity analysis:', result);
+      console.log('✅ Ultra-critical maturity analysis:', result);
       return result;
     } catch (error) {
       console.error('❌ Maturity analysis error:', error);
-      return this.generateCriticalMaturityAnalysis(idea, 20);
+      return this.generateUltraCriticalMaturityAnalysis(idea, 10);
     }
   }
 
+  private static calculateUltraStrictMaturityScore(analysis: any, validation: any, structureScore: number, idea: Idea): number {
+    // Check for nonsensical ideas first
+    if (validation.isNonsensical) {
+      return Math.min(8, validation.qualityScore);
+    }
+    
+    // Check business logic
+    if (analysis.businessLogicCheck === 'fundamentally flawed') {
+      return Math.min(15, structureScore);
+    }
+    
+    // Start with AI score but apply strict caps
+    let score = Math.min(analysis.score || 25, structureScore + 20);
+    
+    // Apply validation penalties
+    if (validation.issues.length > 0) {
+      score -= validation.issues.length * 10;
+    }
+    
+    // Market potential penalties
+    const marketPotential = analysis.marketPotential;
+    if (marketPotential) {
+      if (marketPotential.marketSize === 'nonexistent') score -= 25;
+      if (marketPotential.score < 20) score -= 15;
+    }
+    
+    // Feasibility penalties
+    const feasibility = analysis.feasibilityScore;
+    if (feasibility) {
+      if (feasibility.financial < 20) score -= 20;
+      if (feasibility.overall < 25) score -= 15;
+    }
+    
+    // Fatal flaws check
+    if (analysis.fatalFlaws && analysis.fatalFlaws.length > 2) {
+      score -= analysis.fatalFlaws.length * 8;
+    }
+    
+    // Structure-based caps
+    if (structureScore < 30) {
+      score = Math.min(score, 25);
+    } else if (structureScore < 50) {
+      score = Math.min(score, 45);
+    }
+    
+    return Math.max(3, Math.min(75, score)); // Absolute bounds: 3-75%
+  }
+
   private static calculateStructureScore(idea: Idea): number {
-    let score = 10; // Base score
+    let score = 5; // Start very low
     
-    if (idea.title && idea.title.length > 5 && !idea.title.includes('New Idea')) score += 15;
-    if (idea.description && idea.description.length > 50) score += 15;
-    if (idea.painPoints && idea.painPoints.length >= 2) score += 20;
-    if (idea.features && idea.features.length >= 3) score += 20;
-    if (idea.userPersonas && idea.userPersonas.length >= 2) score += 15;
-    if (idea.tags && idea.tags.length >= 3) score += 5;
+    if (idea.title && idea.title.length > 5 && !idea.title.includes('New Idea')) score += 12;
+    if (idea.description && idea.description.length > 50) score += 12;
+    if (idea.painPoints && idea.painPoints.length >= 2) score += 15;
+    if (idea.features && idea.features.length >= 3) score += 15;
+    if (idea.userPersonas && idea.userPersonas.length >= 2) score += 12;
+    if (idea.tags && idea.tags.length >= 3) score += 4;
     
-    return Math.min(score, 60); // Cap structure score at 60
+    return Math.min(score, 50); // Cap structure score at 50
   }
 
-  private static processRealisticMarketPotential(data: any): MarketPotential {
+  private static processUltraRealisticMarketPotential(data: any, ideaScore: number): MarketPotential {
+    // For terrible ideas, reflect that in market potential
+    const maxScore = ideaScore < 20 ? 15 : (ideaScore < 40 ? 35 : 60);
+    
     return {
-      score: Math.min(Math.max(data?.score || 30, 10), 70), // Cap market potential at 70
-      marketSize: ['small', 'medium', 'large'].includes(data?.marketSize) ? data.marketSize : 'small',
-      competitionLevel: ['low', 'medium', 'high', 'saturated'].includes(data?.competitionLevel) ? data.competitionLevel : 'high',
-      demandIndicators: Array.isArray(data?.demandIndicators) ? data.demandIndicators : ['Demand validation needed'],
+      score: Math.min(Math.max(data?.score || 20, 5), maxScore),
+      marketSize: ideaScore < 20 ? 'small' : (['small', 'medium', 'large'].includes(data?.marketSize) ? data.marketSize : 'small'),
+      competitionLevel: ideaScore < 20 ? 'irrelevant' : (['low', 'medium', 'high', 'saturated'].includes(data?.competitionLevel) ? data.competitionLevel : 'high'),
+      demandIndicators: Array.isArray(data?.demandIndicators) ? data.demandIndicators : (ideaScore < 20 ? ['No demand identified'] : ['Demand validation needed']),
       marketTrends: Array.isArray(data?.marketTrends) ? data.marketTrends : ['Market research required'],
-      targetMarketSize: data?.targetMarketSize || 'Market size unclear',
-      revenueProjection: data?.revenueProjection || 'Revenue model unproven',
-      barriers: Array.isArray(data?.barriers) ? data.barriers : ['High competition', 'Market entry costs', 'User acquisition challenges'],
-      opportunities: Array.isArray(data?.opportunities) ? data.opportunities : ['Limited opportunities identified']
+      targetMarketSize: data?.targetMarketSize || (ideaScore < 20 ? 'Nonexistent market' : 'Market size unclear'),
+      revenueProjection: data?.revenueProjection || (ideaScore < 20 ? 'No viable revenue model' : 'Revenue model unproven'),
+      barriers: Array.isArray(data?.barriers) ? data.barriers : (ideaScore < 20 ? ['Fundamental business flaws', 'No market demand'] : ['High competition', 'Market entry costs']),
+      opportunities: Array.isArray(data?.opportunities) ? data.opportunities : (ideaScore < 20 ? ['No opportunities identified'] : ['Limited opportunities'])
     };
   }
 
-  private static processRealisticFeasibilityScore(data: any): FeasibilityScore {
-    return {
-      overall: Math.min(Math.max(data?.overall || 35, 10), 75), // Cap overall feasibility
-      technical: Math.min(Math.max(data?.technical || 40, 15), 80),
-      financial: Math.min(Math.max(data?.financial || 30, 10), 70),
-      operational: Math.min(Math.max(data?.operational || 35, 15), 75),
-      legal: Math.min(Math.max(data?.legal || 60, 40), 90),
-      timeToMarket: data?.timeToMarket || '12-24 months (realistic estimate)',
-      resourceRequirements: Array.isArray(data?.resourceRequirements) ? data.resourceRequirements : ['Significant development team', 'Substantial funding', 'Market validation'],
-      riskFactors: Array.isArray(data?.riskFactors) ? data.riskFactors : ['Market acceptance uncertain', 'High competition', 'Technical complexity', 'Funding challenges'],
-      successFactors: Array.isArray(data?.successFactors) ? data.successFactors : ['Exceptional execution required', 'Strong market timing', 'Significant resources']
-    };
-  }
-
-  private static processRealisticRecommendations(data: any, ideaScore: number): ActionableRecommendations {
-    // Generate recommendations based on idea quality
-    const isLowQuality = ideaScore < 40;
-    const isMediumQuality = ideaScore >= 40 && ideaScore < 65;
+  private static processUltraRealisticFeasibilityScore(data: any, ideaScore: number): FeasibilityScore {
+    // For terrible ideas, reflect that in feasibility
+    const maxOverall = ideaScore < 20 ? 20 : (ideaScore < 40 ? 40 : 65);
     
-    if (isLowQuality) {
+    return {
+      overall: Math.min(Math.max(data?.overall || 25, 5), maxOverall),
+      technical: Math.min(Math.max(data?.technical || 30, 10), ideaScore < 20 ? 25 : 70),
+      financial: Math.min(Math.max(data?.financial || 20, 5), ideaScore < 20 ? 15 : 60),
+      operational: Math.min(Math.max(data?.operational || 25, 10), ideaScore < 20 ? 20 : 65),
+      legal: Math.min(Math.max(data?.legal || 50, 30), 85),
+      timeToMarket: data?.timeToMarket || (ideaScore < 20 ? 'Not viable' : '18+ months'),
+      resourceRequirements: Array.isArray(data?.resourceRequirements) ? data.resourceRequirements : (ideaScore < 20 ? ['Concept revision required'] : ['Significant resources needed']),
+      riskFactors: Array.isArray(data?.riskFactors) ? data.riskFactors : (ideaScore < 20 ? ['Fundamental concept flaws', 'No viable path forward'] : ['High uncertainty', 'Market risks']),
+      successFactors: Array.isArray(data?.successFactors) ? data.successFactors : (ideaScore < 20 ? ['Complete concept overhaul required'] : ['Exceptional execution needed'])
+    };
+  }
+
+  private static processUltraRealisticRecommendations(data: any, ideaScore: number): ActionableRecommendations {
+    if (ideaScore < 20) {
       return {
         immediate: [
           {
             id: crypto.randomUUID(),
-            action: 'Fundamental concept revision',
-            description: 'This idea needs significant rework. Consider if this solves a real problem.',
+            action: 'Abandon or completely rethink',
+            description: 'This concept has fundamental flaws. Consider abandoning or completely rethinking the approach.',
             priority: 'high',
             effort: 'high',
             impact: 'high',
-            resources: ['time', 'research', 'user feedback'],
+            resources: ['strategic thinking', 'new concept development'],
             estimatedTime: '2-4 weeks'
-          },
-          {
-            id: crypto.randomUUID(),
-            action: 'Market validation',
-            description: 'Validate if anyone actually wants this solution before proceeding.',
-            priority: 'high',
-            effort: 'medium',
-            impact: 'high',
-            resources: ['surveys', 'interviews'],
-            estimatedTime: '1-2 weeks'
           }
         ],
         shortTerm: [
           {
             id: crypto.randomUUID(),
-            action: 'Consider pivoting',
-            description: 'Based on validation results, consider pivoting to a different approach.',
+            action: 'Explore alternative approaches',
+            description: 'If abandoning, explore completely different approaches to the problem space.',
             priority: 'medium',
             effort: 'high',
-            impact: 'high',
-            resources: ['strategic thinking', 'market research'],
+            impact: 'medium',
+            resources: ['research', 'brainstorming'],
             estimatedTime: '1-2 months'
           }
         ],
         longTerm: [
           {
             id: crypto.randomUUID(),
-            action: 'Full concept redevelopment',
-            description: 'If validation fails, completely redevelop the concept.',
+            action: 'Start fresh',
+            description: 'Develop entirely new concepts based on lessons learned.',
             priority: 'low',
             effort: 'high',
             impact: 'medium',
-            resources: ['significant time investment'],
-            estimatedTime: '3-6 months'
+            resources: ['time', 'new perspective'],
+            estimatedTime: '3+ months'
           }
         ],
-        criticalPath: ['validate', 'revise', 'test', 'pivot or proceed'],
+        criticalPath: ['abandon', 'rethink', 'restart'],
         keyMilestones: [
           {
             id: crypto.randomUUID(),
-            title: 'Concept Validation',
-            description: 'Determine if the core concept has merit',
-            targetDate: '2 weeks',
-            successCriteria: ['Clear problem validation', 'User interest confirmed'],
-            deliverables: ['validation report', 'revised concept']
+            title: 'Concept Abandonment Decision',
+            description: 'Decide whether to abandon or completely rework',
+            targetDate: '1 week',
+            successCriteria: ['Clear decision made', 'Alternative approaches identified'],
+            deliverables: ['decision document']
           }
         ]
       };
     }
     
-    // Default to more standard recommendations for medium+ quality ideas
+    // For medium+ quality ideas, use standard recommendations
     return this.processRecommendations(data);
   }
 
-  private static generateCriticalMaturityAnalysis(idea: Idea, structureScore: number): MaturityAnalysis {
-    const score = Math.min(structureScore, 45); // Cap low-quality ideas
+  private static generateUltraCriticalMaturityAnalysis(idea: Idea, structureScore: number): MaturityAnalysis {
+    const score = Math.min(structureScore, 20); // Cap terrible ideas at 20%
     
     return {
       score,
-      strengths: score > 30 ? ['Basic structure exists', 'Has some defined elements'] : ['Concept exists'],
+      strengths: score > 15 ? ['Basic structure exists'] : ['No significant strengths identified'],
       gaps: [
+        'Fundamental business logic flaws',
+        'No viable path to profitability',
         'Lacks market validation',
         'Unclear value proposition',
-        'No competitive analysis',
-        'Unproven demand',
-        'Implementation challenges unclear'
+        'Implementation challenges insurmountable'
       ],
-      nextSteps: [
+      nextSteps: score < 15 ? [
+        'Consider abandoning this approach',
+        'Explore completely different concepts',
+        'Validate basic business assumptions'
+      ] : [
         'Validate core assumptions with real users',
-        'Research competitive landscape thoroughly',
-        'Define clear success metrics',
-        'Create realistic implementation plan'
+        'Research competitive landscape',
+        'Define clear success metrics'
       ],
       marketPotential: {
-        score: Math.min(score - 10, 35),
+        score: Math.min(score - 5, 15),
         marketSize: 'small',
-        competitionLevel: 'high',
-        demandIndicators: ['Validation required'],
-        marketTrends: ['Research needed'],
-        targetMarketSize: 'Unclear without validation',
-        revenueProjection: 'Unproven business model',
-        barriers: ['High competition', 'Unclear demand', 'Implementation challenges'],
-        opportunities: ['Limited without validation']
+        competitionLevel: 'irrelevant',
+        demandIndicators: ['No demand identified'],
+        marketTrends: ['Not applicable'],
+        targetMarketSize: 'Nonexistent or unclear',
+        revenueProjection: 'No viable revenue model',
+        barriers: ['Fundamental concept flaws', 'No market demand', 'Business logic failures'],
+        opportunities: ['No opportunities identified']
       },
       feasibilityScore: {
-        overall: Math.min(score - 5, 40),
-        technical: 45,
-        financial: 25,
-        operational: 35,
-        legal: 70,
-        timeToMarket: '18+ months (if viable)',
-        resourceRequirements: ['Significant validation', 'Development team', 'Substantial funding'],
-        riskFactors: ['Unproven concept', 'Market uncertainty', 'High competition'],
-        successFactors: ['Exceptional execution', 'Market validation', 'Significant resources']
+        overall: Math.min(score, 15),
+        technical: 20,
+        financial: 5,
+        operational: 15,
+        legal: 60,
+        timeToMarket: 'Not viable',
+        resourceRequirements: ['Complete concept revision', 'New approach needed'],
+        riskFactors: ['Guaranteed failure', 'Fundamental flaws', 'No viable path'],
+        successFactors: ['Complete concept overhaul required', 'New approach needed']
       },
-      recommendations: this.processRealisticRecommendations(null, score),
+      recommendations: this.processUltraRealisticRecommendations(null, score),
       missingElements: {
         painPoints: Math.max(0, 3 - (idea.painPoints?.length || 0)),
         features: Math.max(0, 4 - (idea.features?.length || 0)),
@@ -603,14 +843,14 @@ export class OpenRouterService {
     };
   }
 
-  // Update fallback processing to be more critical
+  // Update fallback processing to be ultra-critical
   private static fallbackProcessing(rawInput: string, isExpansion: boolean = false, validation?: any): {
     structuredIdea?: Omit<Idea, 'id' | 'createdAt' | 'updatedAt'>;
     suggestions?: AISuggestion[];
     expandedIdeas?: any[];
     isExpansion: boolean;
   } {
-    console.log('🔄 Using critical fallback processing for:', rawInput);
+    console.log('🔄 Using ultra-critical fallback processing for:', rawInput);
     
     if (isExpansion) {
       const actualInput = rawInput.replace(/please expand this rough idea into a comprehensive concept:\s*/i, '').trim();
@@ -621,6 +861,9 @@ export class OpenRouterService {
     // Use validation score if available, otherwise calculate basic score
     const baseScore = validation?.qualityScore || this.calculateBasicQualityScore(rawInput);
     
+    // For nonsensical ideas, cap at 8%
+    const finalScore = validation?.isNonsensical ? Math.min(baseScore, 8) : Math.min(baseScore, 35);
+    
     const structuredIdea: Omit<Idea, 'id' | 'createdAt' | 'updatedAt'> = {
       title: this.extractTitle(rawInput),
       description: rawInput,
@@ -629,7 +872,7 @@ export class OpenRouterService {
       painPoints: this.extractPainPoints(rawInput),
       features: this.extractFeatures(rawInput),
       userPersonas: this.extractUserPersonas(rawInput),
-      maturityScore: Math.min(baseScore, 50), // Cap fallback scores at 50
+      maturityScore: finalScore,
       existingProducts: [],
       developmentStage: 'raw',
       isStarred: false,
@@ -637,53 +880,66 @@ export class OpenRouterService {
       feasibilityAnalysis: this.generateFallbackFeasibilityAnalysis()
     };
 
-    const suggestions = this.generateCriticalFallbackSuggestions(validation);
+    const suggestions = this.generateUltraCriticalFallbackSuggestions(validation, finalScore);
     
     return { structuredIdea, suggestions, isExpansion: false };
   }
 
   private static calculateBasicQualityScore(input: string): number {
-    let score = 20;
+    let score = 15; // Start lower
     
-    if (input.length > 50) score += 15;
-    if (input.length > 100) score += 10;
-    if (input.split(' ').length > 10) score += 10;
+    if (input.length > 50) score += 10;
+    if (input.length > 100) score += 8;
+    if (input.split(' ').length > 10) score += 7;
     if (input.includes('user') || input.includes('people')) score += 5;
     
-    return Math.min(score, 45);
+    return Math.min(score, 35); // Cap fallback scores at 35
   }
 
-  private static generateCriticalFallbackSuggestions(validation?: any): AISuggestion[] {
-    const suggestions: AISuggestion[] = [
-      {
+  private static generateUltraCriticalFallbackSuggestions(validation?: any, score?: number): AISuggestion[] {
+    const suggestions: AISuggestion[] = [];
+    
+    if (score && score < 15) {
+      suggestions.push({
+        id: crypto.randomUUID(),
+        type: 'critical',
+        content: '🚫 This concept appears to have fundamental flaws. Consider completely rethinking the approach.',
+        applied: false,
+        createdAt: new Date()
+      });
+    } else {
+      suggestions.push({
         id: crypto.randomUUID(),
         type: 'structure',
         content: '⚠️ This idea needs significant development and validation before proceeding.',
         applied: false,
         createdAt: new Date()
-      },
-      {
+      });
+    }
+
+    if (validation?.isNonsensical) {
+      suggestions.push({
         id: crypto.randomUUID(),
-        type: 'maturity',
-        content: '🔍 Consider researching existing solutions and identifying what makes your approach unique.',
+        type: 'critical',
+        content: '❌ This appears to be nonsensical or contradictory. Please provide a coherent business concept.',
         applied: false,
         createdAt: new Date()
-      }
-    ];
+      });
+    }
 
     if (validation?.issues) {
       validation.issues.forEach((issue: string) => {
         suggestions.push({
           id: crypto.randomUUID(),
           type: 'structure',
-          content: `❌ ${issue}`,
+          content: `🔍 Critical issue: ${issue}`,
           applied: false,
           createdAt: new Date()
         });
       });
     }
 
-    return suggestions;
+    return suggestions.slice(0, 5);
   }
 
   // Keep existing helper methods but make them more conservative
@@ -793,26 +1049,27 @@ export class OpenRouterService {
   static async generateExpandedIdeas(roughIdea: string): Promise<ExpandedIdea[]> {
     try {
       const validation = this.validateIdeaQuality(roughIdea);
-      if (!validation.isValid) {
+      if (!validation.isValid || validation.isNonsensical) {
         return this.generateFallbackExpandedIdeas(roughIdea);
       }
 
       const prompt = `
         Expand this rough idea into 4 different business concepts: "${roughIdea}"
         
-        Be realistic about market potential and implementation challenges.
+        Be BRUTALLY REALISTIC about market potential and implementation challenges.
+        Don't create fantasy scenarios - be honest about difficulties.
         
         Respond with JSON array of 4 objects:
         {
-          "title": "Professional, realistic title",
-          "description": "Honest 2-3 sentence description with realistic expectations",
+          "title": "Realistic, honest title",
+          "description": "Honest 2-3 sentence description with realistic challenges mentioned",
           "targetAudience": "Specific, realistic target audience",
-          "keyFeatures": ["4-5", "realistic", "features"],
-          "marketAngle": "Honest market positioning and challenges",
+          "keyFeatures": ["4-5", "realistic", "achievable", "features"],
+          "marketAngle": "Honest market positioning including challenges and competition",
           "tags": ["3-5", "relevant", "tags"]
         }
         
-        Make each version different but realistic about challenges and competition.
+        Make each version different but realistic about the significant challenges.
       `;
 
       const response = await this.makeAPICall([
@@ -831,11 +1088,11 @@ export class OpenRouterService {
       return expandedIdeas.map((idea: any, index: number) => ({
         id: crypto.randomUUID(),
         title: idea.title || `${roughIdea} - Concept ${index + 1}`,
-        description: idea.description || 'Concept needs further development.',
+        description: idea.description || 'Concept needs significant development and faces major challenges.',
         targetAudience: idea.targetAudience || 'Target audience unclear',
         keyFeatures: Array.isArray(idea.keyFeatures) ? idea.keyFeatures : ['Features need definition'],
-        marketAngle: idea.marketAngle || 'Market positioning unclear',
-        tags: Array.isArray(idea.tags) ? idea.tags : ['concept', 'development-needed']
+        marketAngle: idea.marketAngle || 'Market positioning unclear - high competition expected',
+        tags: Array.isArray(idea.tags) ? idea.tags : ['concept', 'high-risk']
       }));
     } catch (error) {
       console.error('❌ Expansion generation error:', error);
@@ -848,18 +1105,17 @@ export class OpenRouterService {
       {
         id: crypto.randomUUID(),
         title: `${roughIdea} - Basic Concept`,
-        description: `A basic implementation of ${roughIdea.toLowerCase()} that would need significant development and validation.`,
-        targetAudience: 'Target audience needs research and validation',
-        keyFeatures: ['Core functionality undefined', 'User interface needed', 'Basic features required'],
-        marketAngle: 'Market position unclear - competitive analysis needed',
-        tags: ['concept', 'needs-development', 'validation-required']
+        description: `A basic implementation of ${roughIdea.toLowerCase()} that would face significant development challenges, market competition, and validation requirements.`,
+        targetAudience: 'Target audience needs extensive research and validation',
+        keyFeatures: ['Core functionality undefined', 'User interface needed', 'Basic features require development'],
+        marketAngle: 'Market position unclear - expect high competition and significant barriers to entry',
+        tags: ['concept', 'high-risk', 'validation-required', 'development-intensive']
       }
     ];
   }
 
   // Keep other existing methods...
   static async generateRemixVariants(idea: Idea): Promise<RemixVariant[]> {
-    // Implementation remains similar but with more realistic assessments
     return [];
   }
 
@@ -877,18 +1133,18 @@ export class OpenRouterService {
   private static processFeasibilityAnalysisFromResponse(data: any) {
     return {
       technical: {
-        score: 40,
+        score: 30,
         challenges: ['Technical assessment needed'],
         requirements: ['Requirements analysis needed']
       },
       financial: {
-        score: 30,
+        score: 20,
         estimatedCost: 'Cost analysis needed',
         revenueModel: ['Revenue model unclear'],
         fundingNeeds: 'Funding requirements unknown'
       },
       market: {
-        score: 35,
+        score: 25,
         demand: 'Market demand unvalidated',
         competition: 'Competitive landscape unclear',
         barriers: ['Market barriers unknown']
@@ -962,18 +1218,18 @@ export class OpenRouterService {
   private static generateFallbackFeasibilityAnalysis() {
     return {
       technical: {
-        score: 35,
+        score: 25,
         challenges: ['Technical challenges unknown'],
         requirements: ['Requirements need definition']
       },
       financial: {
-        score: 25,
+        score: 15,
         estimatedCost: 'Costs unclear',
         revenueModel: ['Revenue model undefined'],
         fundingNeeds: 'Funding needs unknown'
       },
       market: {
-        score: 30,
+        score: 20,
         demand: 'Market demand unvalidated',
         competition: 'Competition level unknown',
         barriers: ['Market barriers unclear']
