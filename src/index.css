@@ -418,45 +418,45 @@
     
     /* Better mobile text sizing */
     .text-5xl {
-      font-size: 2.25rem;
-      line-height: 2.5rem;
-    }
-    
-    .text-4xl {
       font-size: 1.875rem;
       line-height: 2.25rem;
     }
     
-    .text-3xl {
+    .text-4xl {
       font-size: 1.5rem;
       line-height: 2rem;
     }
     
-    .text-2xl {
+    .text-3xl {
       font-size: 1.25rem;
       line-height: 1.75rem;
     }
     
-    .text-xl {
+    .text-2xl {
       font-size: 1.125rem;
-      line-height: 1.75rem;
+      line-height: 1.5rem;
+    }
+    
+    .text-xl {
+      font-size: 1rem;
+      line-height: 1.5rem;
     }
     
     /* Mobile-friendly padding */
     .p-12 {
-      padding: 2rem;
-    }
-    
-    .p-10 {
       padding: 1.5rem;
     }
     
-    .p-8 {
+    .p-10 {
       padding: 1.25rem;
     }
     
-    .p-6 {
+    .p-8 {
       padding: 1rem;
+    }
+    
+    .p-6 {
+      padding: 0.75rem;
     }
     
     /* Better mobile grid layouts */
@@ -626,6 +626,172 @@
       }
     }
   }
+}
+
+/* Desktop font size improvements */
+@media (min-width: 768px) {
+  .text-6xl {
+    font-size: 3rem;
+    line-height: 1;
+  }
+  
+  .text-5xl {
+    font-size: 2.5rem;
+    line-height: 1;
+  }
+  
+  .text-4xl {
+    font-size: 2rem;
+    line-height: 2.25rem;
+  }
+  
+  .text-3xl {
+    font-size: 1.75rem;
+    line-height: 2rem;
+  }
+  
+  .text-2xl {
+    font-size: 1.375rem;
+    line-height: 1.75rem;
+  }
+  
+  .text-xl {
+    font-size: 1.125rem;
+    line-height: 1.75rem;
+  }
+}
+
+/* Enhanced animations */
+.animate-fade-in {
+  animation: fadeIn 0.6s ease-out;
+}
+
+.animate-slide-up {
+  animation: slideUp 0.5s ease-out;
+}
+
+.animate-slide-in-left {
+  animation: slideInLeft 0.5s ease-out;
+}
+
+.animate-slide-in-right {
+  animation: slideInRight 0.5s ease-out;
+}
+
+.animate-bounce-in {
+  animation: bounceIn 0.6s ease-out;
+}
+
+.animate-scale-in {
+  animation: scaleIn 0.4s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { 
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to { 
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideInLeft {
+  from { 
+    opacity: 0;
+    transform: translateX(-30px);
+  }
+  to { 
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideInRight {
+  from { 
+    opacity: 0;
+    transform: translateX(30px);
+  }
+  to { 
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes bounceIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.3);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+  70% {
+    transform: scale(0.9);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes scaleIn {
+  from { 
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  to { 
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Staggered animation delays */
+.animate-delay-100 { animation-delay: 0.1s; }
+.animate-delay-200 { animation-delay: 0.2s; }
+.animate-delay-300 { animation-delay: 0.3s; }
+.animate-delay-400 { animation-delay: 0.4s; }
+.animate-delay-500 { animation-delay: 0.5s; }
+
+/* Hover animations */
+.hover-lift {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.hover-lift:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+}
+
+.hover-glow {
+  transition: all 0.3s ease;
+}
+
+.hover-glow:hover {
+  box-shadow: 0 0 20px var(--neon-glow);
+  border-color: var(--neon-blue);
+}
+
+/* Text animations */
+.text-shimmer {
+  background: linear-gradient(90deg, var(--text-primary) 25%, var(--neon-blue) 50%, var(--text-primary) 75%);
+  background-size: 200% 100%;
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: shimmer 2s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
 }
 
 /* Smooth transitions for theme switching */

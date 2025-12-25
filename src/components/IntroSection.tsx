@@ -202,34 +202,34 @@ export const IntroSection: React.FC<IntroSectionProps> = ({ onEngineSelect }) =>
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: visibleElements.has('final-cta') ? 1 : 0, y: visibleElements.has('final-cta') ? 0 : 30 }}
           transition={{ duration: 0.6, delay: 0.6 }}
-          className="text-center p-12 bg-gradient-to-r from-blue-900/20 to-purple-900/20 rounded-3xl border border-neon/30 neon-glow glass"
+          className="text-center p-8 bg-gradient-to-r from-blue-900/20 to-purple-900/20 rounded-2xl border border-neon/30 neon-glow glass animate-scale-in"
         >
-          <h3 className="text-4xl font-bold text-primary neon-text mb-8">
+          <h3 className="text-2xl md:text-3xl font-bold text-primary neon-text mb-6">
             Ready to Transform Your Ideas?
           </h3>
-          <p className="text-secondary mb-10 max-w-3xl mx-auto text-xl leading-relaxed">
+          <p className="text-secondary mb-8 max-w-2xl mx-auto text-lg leading-relaxed">
             Join thousands of innovators who trust ObliQ to validate and develop their concepts into market-ready solutions.
           </p>
-          <div className="flex flex-col lg:flex-row gap-8 justify-center">
+          <div className="flex flex-col lg:flex-row gap-6 justify-center">
             <motion.button
               onClick={() => onEngineSelect('analyzer')}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              className="bg-gradient-to-r from-blue-600 via-blue-700 to-blue-800 text-white px-12 py-5 font-semibold flex items-center space-x-4 mx-auto group text-xl rounded-xl hover:shadow-2xl hover:shadow-blue-500/30 transition-all duration-300 border border-blue-500/30 neon-glow"
+              className="bg-gradient-to-r from-blue-600 via-blue-700 to-blue-800 text-white px-8 py-3 font-semibold flex items-center space-x-3 mx-auto group text-lg rounded-xl hover:shadow-2xl hover:shadow-blue-500/30 transition-all duration-300 border border-blue-500/30 neon-glow hover-lift animate-slide-in-left animate-delay-200"
             >
-              <BarChart3 className="h-7 w-7" />
+              <BarChart3 className="h-5 w-5" />
               <span>Start Analyzing Ideas</span>
-              <ArrowRight className="h-7 w-7 group-hover:translate-x-2 transition-transform" />
+              <ArrowRight className="h-5 w-5 group-hover:translate-x-2 transition-transform" />
             </motion.button>
             <motion.button
               onClick={() => onEngineSelect('expansion')}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              className="bg-gradient-to-r from-purple-600 via-pink-600 to-pink-700 text-white px-12 py-5 font-semibold rounded-xl flex items-center space-x-4 mx-auto group hover:shadow-2xl hover:shadow-pink-500/30 transition-all duration-300 text-xl border border-pink-500/30 pink-glow"
+              className="bg-gradient-to-r from-purple-600 via-pink-600 to-pink-700 text-white px-8 py-3 font-semibold rounded-xl flex items-center space-x-3 mx-auto group hover:shadow-2xl hover:shadow-pink-500/30 transition-all duration-300 text-lg border border-pink-500/30 pink-glow hover-lift animate-slide-in-right animate-delay-300"
             >
-              <Zap className="h-7 w-7" />
+              <Zap className="h-5 w-5" />
               <span>Expand Rough Ideas</span>
-              <ArrowRight className="h-7 w-7 group-hover:translate-x-2 transition-transform" />
+              <ArrowRight className="h-5 w-5 group-hover:translate-x-2 transition-transform" />
             </motion.button>
           </div>
         </motion.div>

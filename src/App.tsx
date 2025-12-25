@@ -216,15 +216,15 @@ function App() {
                       exit={{ opacity: 0, y: 10, scale: 0.95 }}
                       className="absolute right-0 mt-2 w-96 bg-secondary rounded-xl border border-primary shadow-2xl z-50 p-6 glass"
                     >
-                      <h3 className="text-lg font-semibold text-primary mb-4">Powerful Features</h3>
+                      <h3 className="text-base font-semibold text-primary mb-4 animate-fade-in">Powerful Features</h3>
                       <div className="space-y-4">
                         {features.map((feature) => (
-                          <div key={feature.title} className="flex items-start space-x-3 p-3 bg-tertiary rounded-lg border border-primary">
+                          <div key={feature.title} className="flex items-start space-x-3 p-3 bg-tertiary rounded-lg border border-primary hover-glow animate-slide-up">
                             <div className="gradient-animation p-2 rounded-lg neon-glow">
-                              <feature.icon className="h-5 w-5 text-white" />
+                              <feature.icon className="h-4 w-4 text-white" />
                             </div>
                             <div>
-                              <h4 className="font-medium text-primary text-sm">{feature.title}</h4>
+                              <h4 className="font-medium text-primary text-xs">{feature.title}</h4>
                               <p className="text-xs text-secondary leading-relaxed">{feature.description}</p>
                             </div>
                           </div>

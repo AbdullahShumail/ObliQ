@@ -101,21 +101,21 @@ export const IdeaInputForm: React.FC<IdeaInputFormProps> = ({
         transition={{ delay: 0.3 }}
         className="mt-10"
       >
-        <h3 className="text-xl font-semibold text-primary mb-6 text-center neon-text">
+        <h3 className="text-lg font-semibold text-primary mb-4 text-center neon-text animate-fade-in">
           Need inspiration? Try these examples:
         </h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {exampleIdeas.map((example, index) => (
             <motion.button
               key={index}
               onClick={() => setIdea(example)}
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
-              className="p-6 bg-secondary hover:bg-tertiary rounded-xl text-left text-sm text-secondary transition-all duration-300 border border-primary hover:border-neon card-hover glass"
+              className={`p-4 bg-secondary hover:bg-tertiary rounded-xl text-left text-sm text-secondary transition-all duration-300 border border-primary hover:border-neon hover-lift hover-glow glass animate-slide-up animate-delay-${(index + 1) * 100}`}
               disabled={isLoading}
             >
               <div className="flex items-start space-x-3">
-                <Lightbulb className="h-5 w-5 text-neon mt-1 flex-shrink-0" />
+                <Lightbulb className="h-4 w-4 text-neon mt-1 flex-shrink-0" />
                 <span className="leading-relaxed">{example}</span>
               </div>
             </motion.button>
